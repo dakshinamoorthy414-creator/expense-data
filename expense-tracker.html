@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Expenses</title>
+<link rel="apple-touch-icon" href="icon.png">
 <style>
   :root{
     --bg:#14171c;
@@ -134,7 +135,7 @@
   .mode-btn.selected[data-mode="GPay"]{background:rgba(92,158,224,0.15); border-color:var(--gpay); color:var(--gpay);}
   .mode-btn.selected[data-mode="Cash"]{background:rgba(224,169,92,0.15); border-color:var(--cash); color:var(--cash);}
   .mode-btn.selected[data-mode="Paytm"]{background:rgba(92,194,224,0.15); border-color:var(--paytm); color:var(--paytm);}
-  .mode-btn.selected[data-mode="Slice"]{background:rgba(224,92,160,0.15); border-color:var(--slice); color:var(--slice);}
+  .mode-btn.selected[data-mode="Card"]{background:rgba(224,92,160,0.15); border-color:var(--slice); color:var(--slice);}
   .mode-btn.selected[data-mode="Other"]{background:rgba(160,140,224,0.15); border-color:var(--other); color:var(--other);}
 
   .add-btn{
@@ -209,6 +210,75 @@
   }
   .history-top h2{margin:0; font-size:18px; font-weight:700;}
 
+  .history-total{
+    margin:16px 20px 0;
+    background:linear-gradient(135deg, var(--card) 0%, var(--card-2) 100%);
+    border:1px solid var(--accent-dim);
+    border-radius:14px;
+    padding:14px 16px;
+    text-align:center;
+  }
+  .history-total .label{
+    font-size:11.5px;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+  }
+  .history-total .value{
+    font-size:26px;
+    font-weight:700;
+    color:var(--accent);
+    margin-top:4px;
+  }
+
+  .cat-breakdown{
+    margin:12px 20px 0;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:6px 16px;
+  }
+  .cat-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:10px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .cat-row:last-child{border-bottom:none;}
+  .cat-row .cat-name{
+    font-size:14px;
+    font-weight:600;
+  }
+  .cat-row .cat-right{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .cat-row .cat-amt{
+    font-size:14.5px;
+    font-weight:700;
+    font-variant-numeric:tabular-nums;
+  }
+  .cat-row .cat-pct{
+    font-size:11.5px;
+    color:var(--muted);
+    min-width:34px;
+    text-align:right;
+  }
+  .cat-bar-bg{
+    height:4px;
+    background:var(--card-2);
+    border-radius:4px;
+    margin-top:6px;
+    overflow:hidden;
+  }
+  .cat-bar-fill{
+    height:100%;
+    background:var(--accent);
+    border-radius:4px;
+  }
+
   .list-header{
     display:flex;
     justify-content:space-between;
@@ -254,7 +324,7 @@
   .dot.GPay{background:var(--gpay);}
   .dot.Cash{background:var(--cash);}
   .dot.Paytm{background:var(--paytm);}
-  .dot.Slice{background:var(--slice);}
+  .dot.Card{background:var(--slice);}
   .dot.Other{background:var(--other);}
   .entry .info{min-width:0;}
   .entry .info .note{font-size:14.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
@@ -331,11 +401,10 @@
         <option>Travel</option>
         <option>Groceries</option>
         <option>Shopping</option>
-        <option>Medical</option>
+        <option>Bills</option>
         <option>Health</option>
         <option>Entertainment</option>
         <option>Other</option>
-        <option>Fuel</option>
       </select>
     </div>
     <div class="field">
@@ -350,7 +419,7 @@
         <div class="mode-btn selected" data-mode="GPay">GPay</div>
         <div class="mode-btn" data-mode="Cash">Cash</div>
         <div class="mode-btn" data-mode="Paytm">Paytm</div>
-        <div class="mode-btn" data-mode="Slice">Slice</div>
+        <div class="mode-btn" data-mode="Card">Credit Card</div>
         <div class="mode-btn" data-mode="Other">Other</div>
       </div>
     </div>
@@ -367,6 +436,7 @@
     <div class="back-btn" id="closeHistory">‹</div>
     <h2>History</h2>
   </div>
+  <div class="cat-breakdown" id="catBreakdown"></div>
   <div class="list-header">
     <h2>All entries</h2>
     <input type="text" id="search" placeholder="Search...">
@@ -435,6 +505,7 @@
     document.getElementById("totalMonth").textContent = fmt(totalMonth);
     document.getElementById("totalToday").textContent = fmt(totalToday);
     document.getElementById("historyCount").textContent = entries.length + (entries.length === 1 ? " entry" : " entries");
+    renderCategoryBreakdown(totalAll);
 
     entriesEl.innerHTML = "";
 
@@ -476,6 +547,40 @@
 
       entriesEl.appendChild(dayEl);
     });
+  }
+
+  function renderCategoryBreakdown(totalAll){
+    const catBreakdown = document.getElementById("catBreakdown");
+    if (entries.length === 0){
+      catBreakdown.innerHTML = "";
+      return;
+    }
+    const sums = {};
+    entries.forEach(e => {
+      const c = e.category || "Other";
+      sums[c] = (sums[c] || 0) + e.amount;
+    });
+    const rows = Object.keys(sums)
+      .map(c => ({ name: c, amt: sums[c] }))
+      .sort((a,b) => b.amt - a.amt);
+
+    catBreakdown.innerHTML = rows.map(r => {
+      const pct = totalAll > 0 ? (r.amt / totalAll * 100) : 0;
+      return `
+        <div class="cat-row">
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span class="cat-name">${escapeHtml(r.name)}</span>
+              <span class="cat-right">
+                <span class="cat-amt">${fmt(r.amt)}</span>
+                <span class="cat-pct">${pct.toFixed(0)}%</span>
+              </span>
+            </div>
+            <div class="cat-bar-bg"><div class="cat-bar-fill" style="width:${pct}%"></div></div>
+          </div>
+        </div>
+      `;
+    }).join("");
   }
 
   function formatDate(d){
