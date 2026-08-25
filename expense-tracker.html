@@ -45,7 +45,6 @@
     color:var(--text);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     padding-bottom:calc(40px + env(safe-area-inset-bottom));
-    padding-top:env(safe-area-inset-top);
     -webkit-user-select:none;
     user-select:none;
     -webkit-touch-callout:none;
@@ -469,11 +468,6 @@
     <h2>History</h2>
   </div>
   <div class="cat-breakdown" id="catBreakdown"></div>
-  <div class="backup-row">
-    <button class="backup-btn" id="exportBtn">⬇ Backup</button>
-    <button class="backup-btn" id="importBtn">⬆ Restore</button>
-    <input type="file" id="importFile" accept="application/json" style="display:none;">
-  </div>
   <div class="list-header">
     <h2>All entries</h2>
     <input type="text" id="search" placeholder="Search...">
@@ -544,9 +538,6 @@
   const openHistoryBtn = document.getElementById("openHistory");
   const closeHistoryBtn = document.getElementById("closeHistory");
   const historyPanel = document.getElementById("historyPanel");
-  const exportBtn = document.getElementById("exportBtn");
-  const importBtn = document.getElementById("importBtn");
-  const importFile = document.getElementById("importFile");
 
   openHistoryBtn.addEventListener("click", () => {
     historyPanel.classList.add("open");
@@ -568,7 +559,6 @@
     URL.revokeObjectURL(url);
   }
 
-  exportBtn.addEventListener("click", exportBackup);
   document.getElementById("mainBackupBtn").addEventListener("click", exportBackup);
 
   function handleImportFile(file){
@@ -600,14 +590,6 @@
     };
     reader.readAsText(file);
   }
-
-  importBtn.addEventListener("click", () => {
-    importFile.click();
-  });
-  importFile.addEventListener("change", (e) => {
-    handleImportFile(e.target.files[0]);
-    importFile.value = "";
-  });
 
   const mainImportBtn = document.getElementById("mainImportBtn");
   const mainImportFile = document.getElementById("mainImportFile");
